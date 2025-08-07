@@ -1,4 +1,4 @@
-import { Button } from '../../components/ui/button'
+import { Button } from './ui/button'
 import { Moon, Sun, Stethoscope } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
