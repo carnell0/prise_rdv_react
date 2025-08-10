@@ -181,8 +181,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
                         <SelectValue placeholder="Sélectionnez votre sexe" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="homme">Homme</SelectItem>
-                        <SelectItem value="femme">Femme</SelectItem>
+                        <SelectItem value="masculin">Homme</SelectItem>
+                        <SelectItem value="feminin">Femme</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

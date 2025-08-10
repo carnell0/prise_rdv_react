@@ -1,308 +1,322 @@
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, AlertCircle } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Alert, AlertDescription } from './ui/alert'
+import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../src/components/ui/dialog'
+import { Button } from '../../src/components/ui/button'
+import { Input } from '../../src/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../src/components/ui/select'
+import { Textarea } from '../../src/components/ui/textarea'
+import { Alert, AlertDescription } from '../../src/components/ui/alert'
+import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface AuthModalProps {
   isOpen: boolean
   mode: 'login' | 'register'
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (user: any) => void
   onSwitchMode: (mode: 'login' | 'register') => void
 }
 
-export default function AuthModal({ isOpen, mode, onClose, onSuccess, onSwitchMode }: AuthModalProps) {
+export default function ImprovedAuthModal({ isOpen, mode, onClose, onSuccess, onSwitchMode }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
     firstname: '',
     lastname: '',
+    email: '',
+    password: '',
     phone: '',
-    sexe: '' as 'Masculin' | 'Féminin' | '',
+    sexe: '',
     adresse: ''
   })
 
-  const { login, register, loading, error, clearError } = useAuth()
+  const handleSubmit = async () => {
+    setLoading(true)
+    setError(null)
+    setSuccess(null)
 
-  // Réinitialiser le formulaire quand le mode change
-  useEffect(() => {
+    try {
+      // Validation basique
+      if (mode === 'register') {
+        if (!formData.firstname.trim()) throw new Error('Le prénom est requis')
+        if (!formData.lastname.trim()) throw new Error('Le nom est requis')
+        if (!formData.phone.trim()) throw new Error('Le téléphone est requis')
+        if (!formData.sexe) throw new Error('Le sexe est requis')
+        if (!formData.adresse.trim()) throw new Error('L\'adresse est requise')
+      }
+      
+      if (!formData.email.trim()) throw new Error('L\'email est requis')
+      if (!formData.password.trim()) throw new Error('Le mot de passe est requis')
+      
+      if (formData.password.length < 6) {
+        throw new Error('Le mot de passe doit contenir au moins 6 caractères')
+      }
+
+      // Validation email simple
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Veuillez entrer une adresse email valide')
+      }
+
+      // Simulation d'appel API avec erreurs possibles
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulation d'erreurs pour tester
+          if (mode === 'login' && formData.email === 'error@test.com') {
+            reject(new Error('Email ou mot de passe incorrect'))
+            return
+          }
+          if (mode === 'register' && formData.email === 'existing@test.com') {
+            reject(new Error('Cette adresse email est déjà utilisée'))
+            return
+          }
+          
+          resolve(true)
+        }, 2000)
+      })
+      
+      const userData = {
+        id: Math.random().toString(36).substr(2, 9),
+        ...formData,
+        role: 'patient' // Par défaut
+      }
+      
+      setSuccess(mode === 'login' ? 'Connexion réussie !' : 'Compte créé avec succès !')
+      
+      // Attendre un peu pour montrer le message de succès
+      setTimeout(() => {
+        onSuccess(userData)
+        resetForm()
+      }, 1000)
+      
+    } catch (error: any) {
+      setError(error.message || 'Une erreur inattendue s\'est produite')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetForm = () => {
     setFormData({
-      email: '',
-      password: '',
       firstname: '',
       lastname: '',
+      email: '',
+      password: '',
       phone: '',
       sexe: '',
       adresse: ''
     })
-    clearError()
-  }, [mode, clearError])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-
-    try {
-      if (mode === 'login') {
-        await login({
-          email: formData.email,
-          password: formData.password
-        })
-      } else {
-        // Validation côté client pour le register
-        if (!formData.sexe) {
-          setError('Veuillez sélectionner votre sexe')
-          return
-        }
-
-        await register({
-          firstname: formData.firstname,
-          lastname: formData.lastname,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          sexe: formData.sexe as 'Masculin' | 'Féminin',
-          adresse: formData.adresse
-        })
-      }
-      onSuccess()
-    } catch (error) {
-      // L'erreur est déjà gérée par le contexte
-      console.error('Erreur d\'authentification:', error)
-    }
+    setError(null)
+    setSuccess(null)
+    setShowPassword(false)
   }
 
   const handleInputChange = (field: string, value: string) => {
-    // Effacer l'erreur quand l'utilisateur commence à taper
-    if (error) {
-      clearError()
-    }
     setFormData(prev => ({ ...prev, [field]: value }))
+    // Effacer les erreurs lors de la saisie
+    if (error) setError(null)
   }
 
   const handleClose = () => {
-    clearError()
+    resetForm()
     onClose()
   }
 
-  const setError = (message: string) => {
-    // Fonction temporaire pour les erreurs de validation côté client
-    // Dans un vrai projet, on utiliserait un state local ou un contexte dédié
-    console.error('Validation error:', message)
+  const handleSwitchMode = (newMode: 'login' | 'register') => {
+    resetForm()
+    onSwitchMode(newMode)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !loading) {
+      handleSubmit()
+    }
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === 'login' ? 'Se connecter' : 'Créer un compte'}
+          </DialogTitle>
+        </DialogHeader>
 
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                {mode === 'login' ? 'Connexion' : 'Inscription'}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                {mode === 'login' 
-                  ? 'Connectez-vous à votre compte' 
-                  : 'Créez votre compte patient'
-                }
-              </p>
+        {/* Zone scrollable pour le contenu du formulaire */}
+        <div className="overflow-y-auto max-h-[70vh] pr-2">
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4" onKeyPress={handleKeyPress}>
+            {mode === 'register' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Prénom <span className="text-red-500">*</span>
+                    </div>
+                    <Input
+                      id="firstname"
+                      value={formData.firstname}
+                      onChange={(e) => handleInputChange('firstname', e.target.value)}
+                      disabled={loading}
+                      className={error && !formData.firstname.trim() ? 'border-red-500' : ''}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Nom <span className="text-red-500">*</span>
+                    </div>
+                    <Input
+                      id="lastname"
+                      value={formData.lastname}
+                      onChange={(e) => handleInputChange('lastname', e.target.value)}
+                      disabled={loading}
+                      className={error && !formData.lastname.trim() ? 'border-red-500' : ''}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Téléphone <span className="text-red-500">*</span>
+                  </div>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="06 12 34 56 78"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    disabled={loading}
+                    className={error && !formData.phone.trim() ? 'border-red-500' : ''}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Sexe <span className="text-red-500">*</span>
+                  </div>
+                  <Select 
+                    value={formData.sexe} 
+                    onValueChange={(value) => handleInputChange('sexe', value)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className={error && !formData.sexe ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="homme">Homme</SelectItem>
+                      <SelectItem value="femme">Femme</SelectItem>
+                      <SelectItem value="autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Adresse <span className="text-red-500">*</span>
+                  </div>
+                  <Textarea
+                    id="adresse"
+                    value={formData.adresse}
+                    onChange={(e) => handleInputChange('adresse', e.target.value)}
+                    placeholder="123 Rue de la Paix, 75001 Paris"
+                    rows={3}
+                    disabled={loading}
+                    className={error && !formData.adresse.trim() ? 'border-red-500' : ''}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Email <span className="text-red-500">*</span>
+              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder="votre@email.com"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                disabled={loading}
+                className={error && !formData.email.trim() ? 'border-red-500' : ''}
+              />
+              {mode === 'login' && (
+                <p className="text-xs text-muted-foreground">
+                  Testez avec "error@test.com" pour voir une erreur
+                </p>
+              )}
+              {mode === 'register' && (
+                <p className="text-xs text-muted-foreground">
+                  Testez avec "existing@test.com" pour voir une erreur
+                </p>
+              )}
             </div>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-4"
+            <div className="space-y-2">
+              <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Mot de passe <span className="text-red-500">*</span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  disabled={loading}
+                  className={error && formData.password.length < 6 ? 'border-red-500' : ''}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
-                  <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-900/20">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-red-800 dark:text-red-200">
-                      {error}
-                    </AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
               {mode === 'register' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstname">Prénom</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input
-                          id="firstname"
-                          type="text"
-                          placeholder="Votre prénom"
-                          value={formData.firstname}
-                          onChange={(e) => handleInputChange('firstname', e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="lastname">Nom</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input
-                          id="lastname"
-                          type="text"
-                          placeholder="Votre nom"
-                          value={formData.lastname}
-                          onChange={(e) => handleInputChange('lastname', e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="0101020304"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="sexe">Sexe</Label>
-                    <Select value={formData.sexe} onValueChange={(value) => handleInputChange('sexe', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez votre sexe" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Masculin">Masculin</SelectItem>
-                        <SelectItem value="Féminin">Féminin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="adresse">Adresse</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="adresse"
-                        type="text"
-                        placeholder="12 Rue de Paris, 75001 Paris"
-                        value={formData.adresse}
-                        onChange={(e) => handleInputChange('adresse', e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
+                <p className="text-xs text-muted-foreground">
+                  Minimum 6 caractères
+                </p>
               )}
+            </div>
 
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="votre@email.com"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+            <Button onClick={handleSubmit} className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {mode === 'login' ? 'Se connecter' : 'Créer le compte'}
+            </Button>
 
-              <div>
-                <Label htmlFor="password">Mot de passe</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
+            <div className="text-center">
               <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                type="button"
+                variant="link"
+                onClick={() => handleSwitchMode(mode === 'login' ? 'register' : 'login')}
                 disabled={loading}
               >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    {mode === 'login' ? 'Connexion...' : 'Inscription...'}
-                  </div>
-                ) : (
-                  mode === 'login' ? 'Se connecter' : 'S\'inscrire'
-                )}
+                {mode === 'login' 
+                  ? "Pas encore de compte ? S'inscrire" 
+                  : 'Déjà un compte ? Se connecter'
+                }
               </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-600 dark:text-gray-400">
-                {mode === 'login' ? 'Pas encore de compte ?' : 'Déjà un compte ?'}
-                <button
-                  onClick={() => onSwitchMode(mode === 'login' ? 'register' : 'login')}
-                  className="ml-2 text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  {mode === 'login' ? 'S\'inscrire' : 'Se connecter'}
-                </button>
-              </p>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
