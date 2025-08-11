@@ -2,37 +2,20 @@ import { Button } from './ui/button'
 import { Moon, Sun, Stethoscope } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
 
 interface NavbarProps {
   onLogin: () => void
   onRegister: () => void
 }
 
-export default function Navbar({ onLogin, onRegister }: NavbarProps) {
+export function Navbar({ onLogin, onRegister }: NavbarProps) {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleDashboard = () => {
-    if (user?.role === 'patient') {
-      navigate('/dashboard/patient')
-    } else if (user?.role === 'doctor') {
-      navigate('/dashboard/doctor')
-    } else if (user?.role === 'admin') {
-      navigate('/dashboard/admin')
-    }
-  }
-
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
 
   return (
     <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md border-b border-border z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center space-x-2">
           <Stethoscope className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold text-foreground">MediCare</span>
         </div>
@@ -57,14 +40,14 @@ export default function Navbar({ onLogin, onRegister }: NavbarProps) {
               </Button>
             </>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">
                 Bonjour, {user.firstname}
               </span>
-              <Button variant="outline" size="sm" onClick={handleDashboard}>
+              <Button variant="outline" size="sm">
                 Dashboard
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Button variant="ghost" onClick={logout}>
                 Déconnexion
               </Button>
             </div>

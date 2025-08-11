@@ -1,66 +1,48 @@
 import { useState } from 'react'
-import Navbar from '../components/Navbar'
-import LandingSection from '../components/LandingSection'
-import Footer from '../components/Footer'
-import AuthModal from '../components/AuthModal'
-import AppointmentModal from '../components/AppointmentModal'
-import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { Navbar } from '../components/Navbar';
+import { LandingSection } from '../components/LandingSection';
+import { Footer } from '../components/Footer';
+import { AuthModal } from '../components/AuthModal';
+import AppointmentModal from '../components/AppointmentModal';
 
 export default function HomePage() {
-  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null)
-  const [appointmentModal, setAppointmentModal] = useState(false)
-  const { user } = useAuth()
-  const navigate = useNavigate()
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [isAppointmentModalOpen, setAppointmentModalOpen] = useState(false)
 
-  const handleAuthAction = (action: 'login' | 'register' | 'appointment') => {
-    if (!user) {
-      if (action === 'appointment') {
-        setAuthModal('login')
-      } else {
-        setAuthModal(action)
-      }
-    } else {
-      if (action === 'appointment') {
-        setAppointmentModal(true)
-      }
-    }
-  }
-
-  const handleAuthSuccess = () => {
-    setAuthModal(null)
-    // Redirection vers le dashboard selon le rôle
-    if (user?.role === 'patient') {
-      navigate('/dashboard/patient')
-    } else if (user?.role === 'doctor') {
-      navigate('/dashboard/doctor')
-    } else if (user?.role === 'admin') {
-      navigate('/dashboard/admin')
-    }
+  const handleOpenAuthModal = (mode: 'login' | 'register') => {
+    setAuthMode(mode)
+    setAuthModalOpen(true)
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen">
       <Navbar 
-        onLogin={() => handleAuthAction('login')}
-        onRegister={() => handleAuthAction('register')}
+        onLogin={() => handleOpenAuthModal('login')}
+        onRegister={() => handleOpenAuthModal('register')}
       />
-      <LandingSection 
-        onBookAppointment={() => handleAuthAction('appointment')}
-      />
+      <main className="flex-grow">
+        <LandingSection 
+          onBookAppointment={() => setAppointmentModalOpen(true)} 
+        />
+      </main>
       <Footer />
-      
+
       <AuthModal
-        isOpen={authModal !== null}
-        mode={authModal || 'login'}
-        onClose={() => setAuthModal(null)}
-        onSuccess={handleAuthSuccess}
-        onSwitchMode={(mode) => setAuthModal(mode)}
+        isOpen={isAuthModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authMode}
       />
-      
+
       <AppointmentModal
-        isOpen={appointmentModal}
-        onClose={() => setAppointmentModal(false)}
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setAppointmentModalOpen(false)}
+        selectedDoctor={{ 
+          name: 'Dr. Alan Turing', 
+          specialty: 'Cardiologue',
+          price: 75,
+          avatar: '/avatars/doctor1.png'
+        }}
       />
     </div>
   )

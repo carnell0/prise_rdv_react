@@ -10,7 +10,7 @@ import {
 } from '../types/api'
 
 class ApiService {
-  private baseURL: string = 'https://backend-rdv-tlh8.onrender.com'
+  private baseURL: string = import.meta.env.VITE_API_URL || 'https://backend-rdv-tlh8.onrender.com'
   private token: string | null = null
 
   constructor() {

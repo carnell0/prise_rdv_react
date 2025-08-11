@@ -1,6 +1,6 @@
 import { Stethoscope, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react'
 
-export default function Footer() {
+export function Footer() {
   const footerLinks = {
     'Services': [
       'Prise de rendez-vous',

@@ -8,7 +8,7 @@ interface LandingSectionProps {
   onBookAppointment: () => void
 }
 
-export default function LandingSection({ onBookAppointment }: LandingSectionProps) {
+export function LandingSection({ onBookAppointment }: LandingSectionProps) {
   const stats = [
     { icon: Users, label: 'Patients satisfaits', value: '10,000+' },
     { icon: Calendar, label: 'Rendez-vous pris', value: '50,000+' },
@@ -136,7 +136,7 @@ export default function LandingSection({ onBookAppointment }: LandingSectionProp
             </div>
             <div className="relative">
               <img 
-                src="/placeholder.svg?height=400&width=600&text=Interface+MediCare"
+                src="/placeholder-c8fp5.png"
                 alt="Interface MediCare"
                 className="rounded-lg shadow-lg"
               />

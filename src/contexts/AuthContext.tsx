@@ -79,19 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(loginResponse.message || 'Erreur de connexion inattendue')
       }
     } catch (error: any) {
-      let errorMessage = 'Erreur de connexion'
-      
-      if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
-      
-      // Gestion des erreurs réseau
-      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
-        errorMessage = 'Erreur de connexion au serveur. Vérifiez votre connexion internet.'
-      }
-      
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur inattendue est survenue.'
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
@@ -127,19 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(registerResponse.message || 'Erreur lors de l\'inscription')
       }
     } catch (error: any) {
-      let errorMessage = 'Erreur d\'inscription'
-      
-      if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
-      
-      // Gestion des erreurs réseau
-      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
-        errorMessage = 'Erreur de connexion au serveur. Vérifiez votre connexion internet.'
-      }
-      
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur inattendue est survenue lors de l\'inscription.'
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
