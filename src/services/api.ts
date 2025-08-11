@@ -22,6 +22,7 @@ class ApiService {
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     }
 
     if (this.token) {
@@ -82,12 +83,18 @@ class ApiService {
     
     try {
       const config: RequestInit = {
+        ...options, // Mettre les options en premier pour pouvoir les surcharger
         headers: this.getHeaders(),
-        ...options,
+        mode: 'cors', // Spécifier le mode CORS
       }
 
       const response = await fetch(url, config)
       
+      // Gérer les réponses sans contenu (ex: 204 No Content)
+      if (response.status === 204) {
+        return {} as T
+      }
+
       // Essayer de parser la réponse JSON
       let data: any
       try {
